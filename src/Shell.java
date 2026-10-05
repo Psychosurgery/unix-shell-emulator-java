@@ -33,6 +33,18 @@ public final class Shell {
         }
     }
 
+    public boolean runScript(BufferedReader input) throws IOException {
+        String line;
+        while (running && (line = input.readLine()) != null) {
+            output.println(prompt() + line);
+            output.flush();
+            if (!execute(line)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public boolean execute(String line) {
         try {
             List<String> words = parser.parse(line);
@@ -77,4 +89,3 @@ public final class Shell {
         }
     }
 }
-

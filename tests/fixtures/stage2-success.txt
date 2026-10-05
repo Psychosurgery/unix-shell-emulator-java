@@ -1,0 +1,4 @@
+ls "$USERNAME" 'literal $USERNAME'
+cd /tmp
+exit
+
