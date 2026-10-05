@@ -1,0 +1,3 @@
+mv /home/user /home/user/projects
+whoami
+

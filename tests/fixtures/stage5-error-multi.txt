@@ -1,0 +1,3 @@
+mv /docs/guide.txt /home/user/todo.txt /home/user/todo.txt
+whoami
+

@@ -1,0 +1,15 @@
+ls /home/user
+mv /home/user/todo.txt /home/user/tasks.txt
+cat /home/user/tasks.txt
+mv /home/user/projects/demo/readme.txt /home/user/projects
+mv /home/user/projects/demo /home/user/archive
+ls /home/user
+cat /home/user/projects/readme.txt
+mv /home/user/tasks.txt /home/user/projects/readme.txt
+cat /home/user/projects/readme.txt
+mv /docs/guide.txt /home/user/projects/readme.txt /home/user/archive
+ls /home/user/archive
+whoami
+date -u
+exit
+

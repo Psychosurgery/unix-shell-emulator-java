@@ -4,6 +4,7 @@ import java.io.StringReader;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
 
@@ -17,6 +18,8 @@ public final class ShellTest {
         testVfs();
         testCommands();
         testScriptFailure();
+        testMoveInMemory();
+        testMoveErrors();
         System.out.println("All shell tests passed.");
     }
 
@@ -62,6 +65,33 @@ public final class ShellTest {
         check(!capture.output().contains("whoami"), "script stops after first failure");
     }
 
+    private static void testMoveInMemory() throws Exception {
+        Path source = Path.of("tests", "fixtures", "vfs", "deep", "home", "user", "todo.txt");
+        String original = Files.readString(source);
+        Capture capture = new Capture(fixture());
+        check(capture.shell.execute("mv /home/user/todo.txt /home/user/tasks.txt"), "rename file");
+        check(capture.shell.execute("cat /home/user/tasks.txt"), "renamed content");
+        check(!capture.shell.execute("cat /home/user/todo.txt"), "old virtual path is absent");
+        check(capture.shell.execute("mv /docs/guide.txt /home/user/projects/demo"), "move into directory");
+        check(capture.shell.execute("cat /home/user/projects/demo/guide.txt"), "moved file content");
+        check(capture.shell.execute("mv /home/user/projects/demo /home/user/archive"), "move directory");
+        check(capture.shell.execute("cat /home/user/archive/guide.txt"), "moved directory content");
+        check(capture.shell.execute("mv /home/user/tasks.txt /home/user/archive/guide.txt"), "replace file");
+        check(capture.shell.execute("cat /home/user/archive/guide.txt"), "replaced file content");
+        check(Files.readString(source).equals(original), "disk file unchanged");
+        check(!Files.exists(source.resolveSibling("tasks.txt")), "no disk file created");
+        Vfs fresh = fixture();
+        check(fresh.resolve("/home/user/todo.txt", fresh.root()) != null, "fresh VFS has original file");
+    }
+
+    private static void testMoveErrors() throws Exception {
+        Capture capture = new Capture(fixture());
+        check(!capture.shell.execute("mv /home/user /home/user/projects"), "directory cycle rejected");
+        check(!capture.shell.execute("mv / /home/user"), "root move rejected");
+        check(!capture.shell.execute("mv /home/user/todo.txt"), "missing operand rejected");
+        check(capture.errors().contains("mv:"), "move errors identified");
+    }
+
     private static Vfs fixture() throws Exception {
         return Vfs.load(Path.of("tests", "fixtures", "vfs", "deep"));
     }
@@ -91,4 +121,3 @@ public final class ShellTest {
         }
     }
 }
-

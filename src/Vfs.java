@@ -118,6 +118,73 @@ public final class Vfs {
         return "/" + String.join("/", parts);
     }
 
+    public void move(List<String> sources, String target, Node workingDirectory) throws VfsException {
+        if (target.isEmpty()) {
+            throw new VfsException("empty destination path");
+        }
+        if (sources.size() > 1) {
+            Node directory = resolve(target, workingDirectory);
+            if (!directory.isDirectory()) {
+                throw new VfsException("target is not a directory: " + target);
+            }
+            for (String source : sources) {
+                Node node = resolve(source, workingDirectory);
+                moveNode(node, directory, node.name);
+            }
+            return;
+        }
+        Node source = resolve(sources.get(0), workingDirectory);
+        Destination destination = findDestination(target, workingDirectory, source);
+        moveNode(source, destination.parent(), destination.name());
+    }
+
+    private Destination findDestination(String target, Node cwd, Node source) throws VfsException {
+        try {
+            Node existing = resolve(target, cwd);
+            if (existing.isDirectory()) {
+                return new Destination(existing, source.name);
+            }
+            return new Destination(existing.parent, existing.name);
+        } catch (VfsException exception) {
+            int slash = target.lastIndexOf('/');
+            String parentPath = slash < 0 ? "." : target.substring(0, slash);
+            String name = target.substring(slash + 1);
+            if (name.isEmpty() || name.equals(".") || name.equals("..")) {
+                throw new VfsException("invalid destination: " + target);
+            }
+            Node parent = resolve(parentPath.isEmpty() ? "/" : parentPath, cwd);
+            if (!parent.isDirectory()) {
+                throw new VfsException("target parent is not a directory: " + target);
+            }
+            return new Destination(parent, name);
+        }
+    }
+
+    private void moveNode(Node source, Node destination, String name) throws VfsException {
+        if (source == root) {
+            throw new VfsException("cannot move virtual root");
+        }
+        for (Node ancestor = destination; ancestor != null; ancestor = ancestor.parent) {
+            if (ancestor == source) {
+                throw new VfsException("cannot move a directory into itself");
+            }
+        }
+        Node existing = destination.children.get(name);
+        if (existing == source) {
+            return;
+        }
+        if (existing != null && (existing.isDirectory() || source.isDirectory())) {
+            throw new VfsException("cannot replace directory or replace file with directory: " + name);
+        }
+        source.parent.children.remove(source.name);
+        destination.children.put(name, source);
+        source.parent = destination;
+        source.name = name;
+    }
+
+    private record Destination(Node parent, String name) {
+    }
+
     private void loadChildren(Path source, Node parent) throws IOException {
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(source)) {
             for (Path item : stream) {

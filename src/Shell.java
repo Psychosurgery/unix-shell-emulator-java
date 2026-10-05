@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Locale;
 
 public final class Shell {
+    private static final int MIN_MOVE_PATHS = 2;
     private final PrintStream output;
     private final PrintStream errors;
     private final Parser parser;
@@ -85,6 +86,7 @@ public final class Shell {
             case "date" -> showDate(words.subList(1, words.size()));
             case "whoami" -> showUser(words.subList(1, words.size()));
             case "cat" -> printFiles(words.subList(1, words.size()));
+            case "mv" -> move(words.subList(1, words.size()));
             case "exit" -> {
                 if (words.size() != 1) {
                     errors.println("exit: too many arguments");
@@ -187,6 +189,24 @@ public final class Shell {
             throw new VfsException("whoami: too many arguments");
         }
         output.println(user);
+    }
+
+    private void move(List<String> arguments) throws VfsException {
+        List<String> paths = new ArrayList<>(arguments);
+        if (!paths.isEmpty() && paths.get(0).equals("--")) {
+            paths.remove(0);
+        } else if (!paths.isEmpty() && paths.get(0).startsWith("-")) {
+            throw new VfsException("mv: unsupported option: " + paths.get(0));
+        }
+        if (paths.size() < MIN_MOVE_PATHS) {
+            throw new VfsException("mv: missing source or destination operand");
+        }
+        String target = paths.remove(paths.size() - 1);
+        try {
+            vfs.move(paths, target, workingDirectory);
+        } catch (VfsException exception) {
+            throw new VfsException("mv: " + exception.getMessage());
+        }
     }
 
     private String findHost() {
