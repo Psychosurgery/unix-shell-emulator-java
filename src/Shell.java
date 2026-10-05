@@ -9,13 +9,15 @@ public final class Shell {
     private final PrintStream output;
     private final PrintStream errors;
     private final Parser parser;
+    private final Vfs vfs;
     private final String user;
     private final String host;
     private boolean running = true;
 
-    public Shell(PrintStream output, PrintStream errors) {
+    public Shell(PrintStream output, PrintStream errors, Vfs vfs) {
         this.output = output;
         this.errors = errors;
+        this.vfs = vfs;
         this.parser = new Parser(System.getenv());
         this.user = System.getProperty("user.name", "unknown");
         this.host = findHost();

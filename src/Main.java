@@ -20,7 +20,17 @@ public final class Main {
         }
         System.out.println("VFS: " + Configuration.display(configuration.vfsPath()));
         System.out.println("Startup script: " + Configuration.display(configuration.scriptPath()));
-        Shell shell = new Shell(System.out, System.err);
+        Vfs vfs;
+        try {
+            vfs = configuration.vfsPath() == null
+                    ? Vfs.empty() : Vfs.load(configuration.vfsPath());
+        } catch (IOException exception) {
+            System.err.println("shell: " + exception.getMessage());
+            System.exit(1);
+            return;
+        }
+        System.out.println("VFS entries: " + vfs.entryCount());
+        Shell shell = new Shell(System.out, System.err, vfs);
         Path script = configuration.scriptPath();
         if (script != null) {
             System.exit(runScript(shell, script));

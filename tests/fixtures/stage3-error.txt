@@ -1,0 +1,4 @@
+ls before-error
+missing-command
+cd never-runs
+

@@ -1,0 +1,5 @@
+ls "$USERNAME"
+cd /home/user
+ls 'literal $USERNAME'
+exit
+
