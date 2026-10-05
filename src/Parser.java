@@ -76,7 +76,13 @@ public final class Parser {
         if (index + 1 >= line.length()) {
             throw new ParseException("unfinished escape");
         }
-        word.append(line.charAt(index + 1));
+        char next = line.charAt(index + 1);
+        if (Character.isWhitespace(next) || next == '\\' || next == '$'
+                || next == '\'' || next == '"') {
+            word.append(next);
+        } else {
+            word.append('\\').append(next);
+        }
         return index + 1;
     }
 
@@ -114,4 +120,3 @@ public final class Parser {
         return Character.isLetterOrDigit(symbol) || symbol == '_';
     }
 }
-

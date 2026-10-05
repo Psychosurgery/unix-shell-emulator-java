@@ -5,6 +5,8 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 public final class Vfs {
     public static final class Node {
@@ -70,6 +72,52 @@ public final class Vfs {
         return countChildren(root);
     }
 
+    public Node resolve(String path, Node workingDirectory) throws VfsException {
+        Node current = startsAtRoot(path) ? root : workingDirectory;
+        for (String part : withoutTilde(path).split("/")) {
+            if (!part.isEmpty()) {
+                current = resolvePart(path, current, part);
+            }
+        }
+        if (path.endsWith("/") && !current.isDirectory()) {
+            throw new VfsException(path + ": Not a directory");
+        }
+        return current;
+    }
+
+    private boolean startsAtRoot(String path) {
+        return path.startsWith("/") || path.equals("~") || path.startsWith("~/");
+    }
+
+    private String withoutTilde(String path) {
+        return path.equals("~") || path.startsWith("~/") ? path.substring(1) : path;
+    }
+
+    private Node resolvePart(String path, Node current, String part) throws VfsException {
+        if (!current.isDirectory()) {
+            throw new VfsException(path + ": Not a directory");
+        }
+        if (part.equals(".")) {
+            return current;
+        }
+        if (part.equals("..")) {
+            return current.parent == null ? root : current.parent;
+        }
+        Node next = current.children.get(part);
+        if (next == null) {
+            throw new VfsException(path + ": No such file or directory");
+        }
+        return next;
+    }
+
+    public String path(Node node) {
+        List<String> parts = new ArrayList<>();
+        for (Node current = node; current.parent != null; current = current.parent) {
+            parts.add(0, current.name);
+        }
+        return "/" + String.join("/", parts);
+    }
+
     private void loadChildren(Path source, Node parent) throws IOException {
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(source)) {
             for (Path item : stream) {
@@ -105,4 +153,3 @@ public final class Vfs {
         return count;
     }
 }
-

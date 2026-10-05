@@ -1,0 +1,15 @@
+ls /
+ls -al /home/user
+ls /home/user/todo.txt
+cd /home/user
+ls
+cat todo.txt
+cd projects/demo
+cat readme.txt
+cd ..
+cd -
+whoami
+date
+date -u
+exit
+
