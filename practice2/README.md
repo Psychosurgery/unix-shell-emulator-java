@@ -1,24 +1,19 @@
 # Практическая 2, вариант 7
 
-Java 17+. Без библиотек.
+Java 17. Без библиотек. PyPI JSON API, рекурсивный DFS.
 
-`run.bat --package requests --version 2.32.3`
+`run.bat --package requests --version 2.32.3 --mode render`
 
-Опции: `--package`, `--version`, `--repository`, `--test true|false`, `--filter`.
-По умолчанию репозиторий — `https://pypi.org/pypi`, фильтр пустой.
-В тестовом режиме нужен файл и имя из заглавных латинских букв.
+`--package`, `--version` обязательны. `--repository` — `https://pypi.org/pypi`.
+`--mode config|direct|graph|order|render`, по умолчанию `graph`.
+`--filter` убирает пакет с подстрокой и его ветку. При цикле порядка загрузки нет.
+`--output out/graph` — D2 и PNG. `--show false` отключает окно. PNG рисует Java2D.
+`--python-version 3.13.0`, `--platform win32|linux|darwin` (по умолчанию текущая ОС).
 
-Проверка: `powershell -File test.ps1`.
+Тестовый граф: `run.bat --package A --version 1 --test true --repository tests/fixtures/diamond.json`.
+Формат: `{"A":{"1":["B==1"]},"B":{"1":[]}}`. Имена — заглавная латиница.
 
-Зависимости — `requires_dist` указанной версии через PyPI JSON API.
-`--mode config` выводит настройки, `--mode direct` — прямые зависимости.
-
-По умолчанию — граф, рекурсивный DFS. Фильтр убирает пакет вместе с его веткой.
-Тест: `run.bat --package A --version 1 --test true --repository tests/fixtures/cycle.json`.
-Формат файла: `{"A":{"1":["B==1"]},"B":{"1":[]}}`.
-Маркеры: CPython 3.13.0, текущая ОС. Можно задать `--python-version` и `--platform win32|linux|darwin`.
-Выбирается максимальная стабильная версия без yanked. Конфликт версий — ошибка, без перебора назад.
+Проверки: `powershell -File test.ps1`. Примеры и сравнения — [examples](examples/README.md).
+Сравнение онлайн после сборки: `python tests/compare.py requests 2.32.3` (также `flask 3.1.0`, `rich 13.9.4`).
+Зависимости: максимальные стабильные версии без yanked. Конфликты — ошибка, без перебора назад.
 URL-зависимости и нестандартные записи версий не поддержаны.
-
-`--mode order` — зависимости раньше пакета. При цикле порядка нет.
-Сравнение с pip: `python tests/compare.py` после сборки. Только для проверки, нужен интернет.

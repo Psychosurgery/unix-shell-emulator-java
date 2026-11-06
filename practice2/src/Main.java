@@ -16,6 +16,11 @@ public class Main {
                     .build(options.name(), options.version());
             if (options.mode().equals("order")) {
                 graph.order().forEach(release -> System.out.println(release.label()));
+            } else if (options.mode().equals("render")) {
+                java.nio.file.Path png = Visualization.write(graph, options.output());
+                System.out.println("d2=" + options.output() + ".d2");
+                System.out.println("image=" + png);
+                if (options.show()) Visualization.show(png);
             } else {
                 graph.print();
             }

@@ -1,0 +1,7 @@
+python=3.13.1
+platform=win32
+pipdeptree=2.30.0
+nodes=4
+edges=3
+versions=match
+edges=match

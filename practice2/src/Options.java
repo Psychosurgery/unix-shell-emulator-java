@@ -5,10 +5,10 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
-public record Options(String name, String repository, boolean test, String version, String filter, String mode, String python, String platform) {
+public record Options(String name, String repository, boolean test, String version, String filter, String mode, String python, String platform, Path output, boolean show) {
     public static Options parse(String... args) {
         Map<String, String> values = new LinkedHashMap<>();
-        Set<String> known = Set.of("--package", "--repository", "--test", "--version", "--filter", "--mode", "--python-version", "--platform");
+        Set<String> known = Set.of("--package", "--repository", "--test", "--version", "--filter", "--mode", "--python-version", "--platform", "--output", "--show");
         for (int i = 0; i < args.length; i += 2) {
             String key = args[i];
             if (!known.contains(key)) throw new IllegalArgumentException("unknown option: " + key);
@@ -54,14 +54,18 @@ public record Options(String name, String repository, boolean test, String versi
             }
         }
         String mode = values.getOrDefault("--mode", "graph");
-        if (!Set.of("config", "direct", "graph", "order").contains(mode)) throw new IllegalArgumentException("--mode: invalid mode");
+        if (!Set.of("config", "direct", "graph", "order", "render").contains(mode)) throw new IllegalArgumentException("--mode: invalid mode");
         String python = values.getOrDefault("--python-version", "3.13.0");
         if (!python.matches("[0-9]+\\.[0-9]+(?:\\.[0-9]+)?")) throw new IllegalArgumentException("--python-version: invalid version");
         if (python.split("\\.").length == 2) python += ".0";
         String os = System.getProperty("os.name").toLowerCase(java.util.Locale.ROOT);
         String platform = values.getOrDefault("--platform", os.contains("win") ? "win32" : os.contains("mac") ? "darwin" : "linux");
         if (!Set.of("win32", "linux", "darwin").contains(platform)) throw new IllegalArgumentException("--platform: invalid platform");
-        return new Options(name, repository, test, version, filter, mode, python, platform);
+        String output = values.getOrDefault("--output", "out/graph");
+        if (output.isBlank() || Files.isDirectory(Path.of(output))) throw new IllegalArgumentException("--output: expected a file prefix");
+        String show = values.getOrDefault("--show", "true");
+        if (!Set.of("true", "false").contains(show)) throw new IllegalArgumentException("--show: expected true or false");
+        return new Options(name, repository, test, version, filter, mode, python, platform, Path.of(output), Boolean.parseBoolean(show));
     }
 
     public void print() {
@@ -73,5 +77,7 @@ public record Options(String name, String repository, boolean test, String versi
         System.out.println("mode=" + mode);
         System.out.println("python-version=" + python);
         System.out.println("platform=" + platform);
+        System.out.println("output=" + output);
+        System.out.println("show=" + show);
     }
 }

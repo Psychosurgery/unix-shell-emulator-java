@@ -26,6 +26,7 @@ public class Tests {
         versions();
         markers();
         graphs();
+        images();
         System.out.println("checks=" + checks);
     }
 
@@ -149,6 +150,30 @@ public class Tests {
         for (String[] extra : new String[][]{{"--mode", "bad"}, {"--python-version", "latest"}, {"--platform", "dos"}}) {
             invalid("--package", "a", "--version", "1", extra[0], extra[1]);
         }
+    }
+
+    private static void images() throws Exception {
+        for (String fixture : new String[]{"chain", "diamond", "cycle", "self", "empty"}) {
+            Graph graph = graph(fixture, "");
+            java.nio.file.Path prefix = java.nio.file.Path.of("build/images/" + fixture);
+            java.nio.file.Path png = Visualization.write(graph, prefix);
+            var image = javax.imageio.ImageIO.read(png.toFile());
+            check(image != null && image.getWidth() > 300 && image.getHeight() > 150);
+            String d2 = java.nio.file.Files.readString(java.nio.file.Path.of(prefix + ".d2"));
+            check(d2.startsWith("direction: right\n"));
+            check(d2.contains("n0: \"A==1\""));
+            check(d2.lines().filter(line -> line.contains(" -> ")).count() == graph.edges().values().stream().mapToInt(java.util.Set::size).sum());
+        }
+        check(Visualization.d2(graph("chain", "A")).equals("direction: right\n"));
+        check(Visualization.image(graph("chain", "A")).getWidth() >= 400);
+        check(Visualization.d2(graph("diamond", "")).contains("n2: \"D==1\""));
+        fails(() -> Visualization.write(graph("empty", ""), java.nio.file.Path.of("build/invalid.json/graph")));
+        if (java.awt.GraphicsEnvironment.isHeadless()) {
+            fails(() -> Visualization.show(java.nio.file.Path.of("build/images/chain.png")));
+        }
+        invalid("--package", "a", "--version", "1", "--show", "yes");
+        invalid("--package", "a", "--version", "1", "--output", "");
+        invalid("--package", "a", "--version", "1", "--output", "build");
     }
 
     interface Action {

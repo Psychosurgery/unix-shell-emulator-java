@@ -1,0 +1,5 @@
+rich==13.9.4
+java: pygments -> mdurl -> markdown-it-py -> rich
+pip: pygments -> mdurl -> markdown-it-py -> rich
+versions: match
+dependencies first: yes
