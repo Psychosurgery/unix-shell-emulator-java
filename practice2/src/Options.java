@@ -5,10 +5,10 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
-public record Options(String name, String repository, boolean test, String version, String filter) {
+public record Options(String name, String repository, boolean test, String version, String filter, String mode) {
     public static Options parse(String... args) {
         Map<String, String> values = new LinkedHashMap<>();
-        Set<String> known = Set.of("--package", "--repository", "--test", "--version", "--filter");
+        Set<String> known = Set.of("--package", "--repository", "--test", "--version", "--filter", "--mode");
         for (int i = 0; i < args.length; i += 2) {
             String key = args[i];
             if (!known.contains(key)) throw new IllegalArgumentException("unknown option: " + key);
@@ -53,7 +53,9 @@ public record Options(String name, String repository, boolean test, String versi
                 throw new IllegalArgumentException("--repository: expected an HTTP(S) PyPI JSON API URL");
             }
         }
-        return new Options(name, repository, test, version, filter);
+        String mode = values.getOrDefault("--mode", "direct");
+        if (!Set.of("config", "direct").contains(mode)) throw new IllegalArgumentException("--mode: invalid mode");
+        return new Options(name, repository, test, version, filter, mode);
     }
 
     public void print() {
@@ -62,5 +64,6 @@ public record Options(String name, String repository, boolean test, String versi
         System.out.println("test=" + test);
         System.out.println("version=" + version);
         System.out.println("filter=" + filter);
+        System.out.println("mode=" + mode);
     }
 }
