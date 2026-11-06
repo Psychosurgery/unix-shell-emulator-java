@@ -5,10 +5,10 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
-public record Options(String name, String repository, boolean test, String version, String filter, String mode) {
+public record Options(String name, String repository, boolean test, String version, String filter, String mode, String python, String platform) {
     public static Options parse(String... args) {
         Map<String, String> values = new LinkedHashMap<>();
-        Set<String> known = Set.of("--package", "--repository", "--test", "--version", "--filter", "--mode");
+        Set<String> known = Set.of("--package", "--repository", "--test", "--version", "--filter", "--mode", "--python-version", "--platform");
         for (int i = 0; i < args.length; i += 2) {
             String key = args[i];
             if (!known.contains(key)) throw new IllegalArgumentException("unknown option: " + key);
@@ -53,9 +53,15 @@ public record Options(String name, String repository, boolean test, String versi
                 throw new IllegalArgumentException("--repository: expected an HTTP(S) PyPI JSON API URL");
             }
         }
-        String mode = values.getOrDefault("--mode", "direct");
-        if (!Set.of("config", "direct").contains(mode)) throw new IllegalArgumentException("--mode: invalid mode");
-        return new Options(name, repository, test, version, filter, mode);
+        String mode = values.getOrDefault("--mode", "graph");
+        if (!Set.of("config", "direct", "graph").contains(mode)) throw new IllegalArgumentException("--mode: invalid mode");
+        String python = values.getOrDefault("--python-version", "3.13.0");
+        if (!python.matches("[0-9]+\\.[0-9]+(?:\\.[0-9]+)?")) throw new IllegalArgumentException("--python-version: invalid version");
+        if (python.split("\\.").length == 2) python += ".0";
+        String os = System.getProperty("os.name").toLowerCase(java.util.Locale.ROOT);
+        String platform = values.getOrDefault("--platform", os.contains("win") ? "win32" : os.contains("mac") ? "darwin" : "linux");
+        if (!Set.of("win32", "linux", "darwin").contains(platform)) throw new IllegalArgumentException("--platform: invalid platform");
+        return new Options(name, repository, test, version, filter, mode, python, platform);
     }
 
     public void print() {
@@ -65,5 +71,7 @@ public record Options(String name, String repository, boolean test, String versi
         System.out.println("version=" + version);
         System.out.println("filter=" + filter);
         System.out.println("mode=" + mode);
+        System.out.println("python-version=" + python);
+        System.out.println("platform=" + platform);
     }
 }

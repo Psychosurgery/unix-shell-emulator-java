@@ -6,9 +6,16 @@ public class Main {
                 options.print();
                 return;
             }
-            if (options.test()) throw new IllegalArgumentException("test graphs: use --mode config at this stage");
-            Release release = new PyPi(options.repository()).load(options.name(), options.version());
-            release.requirements().forEach(System.out::println);
+            Repository repository = options.test() ? new TestRepository(java.nio.file.Path.of(options.repository()))
+                    : new PyPi(options.repository(), options.python());
+            if (options.mode().equals("direct")) {
+                repository.load(options.name(), options.version()).requirements().forEach(System.out::println);
+                return;
+            }
+            Graph graph = new Graph(repository, options.filter(), new Markers(options.python(), options.platform()))
+                    .build(options.name(), options.version());
+            graph.print();
+            graph.cycles().forEach(cycle -> System.err.println("cycle: " + cycle));
         } catch (IllegalArgumentException e) {
             System.err.println("error: " + e.getMessage());
             System.exit(2);
