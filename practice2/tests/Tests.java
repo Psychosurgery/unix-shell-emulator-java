@@ -112,9 +112,23 @@ public class Tests {
         Graph chain = graph("chain", "");
         check(chain.nodes().size() == 3 && chain.cycles().isEmpty());
         check(chain.edges().get("a").equals(java.util.Set.of("b")));
+        check(chain.order().stream().map(Release::name).toList().equals(java.util.List.of("C", "B", "A")));
         Graph diamond = graph("diamond", "");
         check(diamond.nodes().size() == 4);
         check(diamond.edges().get("c").equals(java.util.Set.of("d")));
+        check(diamond.order().stream().map(Release::name).toList().equals(java.util.List.of("D", "B", "C", "A")));
+        check(graph("empty", "").order().size() == 1);
+        check(graph("chain", "A").order().isEmpty());
+        check(graph("diamond", "B").order().stream().map(Release::name).toList().equals(java.util.List.of("D", "C", "A")));
+        fails(() -> graph("cycle", "").order());
+        fails(() -> graph("self", "").order());
+        for (String fixture : new String[]{"chain", "diamond", "versions", "extras"}) {
+            Graph graph = graph(fixture, "");
+            var order = graph.order().stream().map(r -> Release.normalize(r.name())).toList();
+            for (var edge : graph.edges().entrySet()) {
+                for (String child : edge.getValue()) check(order.indexOf(child) < order.indexOf(edge.getKey()));
+            }
+        }
         check(graph("cycle", "").cycles().equals(java.util.Set.of("a -> b -> c -> a")));
         check(graph("self", "").cycles().equals(java.util.Set.of("a -> a")));
         check(graph("empty", "").nodes().size() == 1);

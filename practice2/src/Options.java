@@ -54,7 +54,7 @@ public record Options(String name, String repository, boolean test, String versi
             }
         }
         String mode = values.getOrDefault("--mode", "graph");
-        if (!Set.of("config", "direct", "graph").contains(mode)) throw new IllegalArgumentException("--mode: invalid mode");
+        if (!Set.of("config", "direct", "graph", "order").contains(mode)) throw new IllegalArgumentException("--mode: invalid mode");
         String python = values.getOrDefault("--python-version", "3.13.0");
         if (!python.matches("[0-9]+\\.[0-9]+(?:\\.[0-9]+)?")) throw new IllegalArgumentException("--python-version: invalid version");
         if (python.split("\\.").length == 2) python += ".0";

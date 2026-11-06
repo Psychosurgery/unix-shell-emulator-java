@@ -87,4 +87,18 @@ public final class Graph {
             for (String child : edges.get(name)) System.out.println(nodes.get(name).label() + " -> " + nodes.get(child).label());
         }
     }
+
+    public List<Release> order() throws IOException {
+        if (!cycles.isEmpty()) throw new IOException("load order is undefined for a cycle: " + cycles.iterator().next());
+        List<Release> result = new ArrayList<>();
+        Set<String> visited = new LinkedHashSet<>();
+        for (String name : nodes.keySet()) order(name, visited, result);
+        return List.copyOf(result);
+    }
+
+    private void order(String name, Set<String> visited, List<Release> result) {
+        if (!visited.add(name)) return;
+        for (String child : edges.get(name)) order(child, visited, result);
+        result.add(nodes.get(name));
+    }
 }
