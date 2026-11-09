@@ -16,7 +16,11 @@ public class Main {
             }
             Graph graph = new Graph(repository, options.filter(), new Markers(target.python(), target.platform()))
                     .build(options.name(), options.version());
-            graph.print();
+            if (options.mode().equals("order")) {
+                graph.order().forEach(release -> System.out.println(release.label()));
+            } else {
+                graph.print();
+            }
             graph.cycles().forEach(cycle -> System.err.println("cycle: " + cycle));
         } catch (IllegalArgumentException e) {
             System.err.println("error: " + e.getMessage());

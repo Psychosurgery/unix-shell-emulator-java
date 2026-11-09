@@ -1,0 +1,5 @@
+requests==2.32.3
+java: charset-normalizer -> idna -> urllib3 -> certifi -> requests
+pip: urllib3 -> idna -> charset-normalizer -> certifi -> requests
+versions: match
+dependencies first: yes

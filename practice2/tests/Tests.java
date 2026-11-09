@@ -30,6 +30,7 @@ public class Tests {
         versions();
         markers();
         graphs();
+        orders();
         invalidRepositories();
         System.out.println("checks=" + checks);
     }
@@ -143,6 +144,27 @@ public class Tests {
         check(graph("extras", "").nodes().keySet().equals(java.util.Set.of("a", "b", "c", "d")));
         fails(() -> graph("conflict", ""));
         fails(() -> new Graph(versions, "", linux).build("A", "3"));
+    }
+
+    private static void orders() throws Exception {
+        check(orderNames("chain", "").equals(java.util.List.of("C", "B", "A")));
+        check(orderNames("diamond", "").equals(java.util.List.of("D", "B", "C", "A")));
+        check(orderNames("empty", "").equals(java.util.List.of("A")));
+        check(orderNames("chain", "A").isEmpty());
+        check(orderNames("diamond", "B").equals(java.util.List.of("D", "C", "A")));
+        fails(() -> graph("cycle", "").order());
+        fails(() -> graph("self", "").order());
+        for (String fixture : new String[]{"chain", "diamond", "versions", "extras"}) {
+            Graph graph = graph(fixture, "");
+            var order = graph.order().stream().map(r -> Release.normalize(r.name())).toList();
+            for (var edge : graph.edges().entrySet()) {
+                for (String child : edge.getValue()) check(order.indexOf(child) < order.indexOf(edge.getKey()));
+            }
+        }
+    }
+
+    private static java.util.List<String> orderNames(String fixture, String filter) throws Exception {
+        return graph(fixture, filter).order().stream().map(Release::name).toList();
     }
 
     private static void invalidRepositories() throws Exception {

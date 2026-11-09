@@ -11,7 +11,7 @@ public record Options(
     private static final Set<String> KEYS = Set.of(
             "--package", "--repository", "--test", "--version", "--filter",
             "--mode", "--python-version", "--platform");
-    private static final Set<String> MODES = Set.of("config", "direct", "graph");
+    private static final Set<String> MODES = Set.of("config", "direct", "graph", "order");
     private static final Set<String> PLATFORMS = Set.of("win32", "linux", "darwin");
     private static final int SHORT_PYTHON_VERSION_SEGMENTS = 2;
 
