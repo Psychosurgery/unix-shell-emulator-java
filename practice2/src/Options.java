@@ -7,16 +7,17 @@ import java.util.Map;
 import java.util.Set;
 
 public record Options(
-        String name, String version, String filter, String mode, Source source, Target target) {
+        String name, String version, String filter, String mode, Source source, Target target, Render render) {
     private static final Set<String> KEYS = Set.of(
             "--package", "--repository", "--test", "--version", "--filter",
-            "--mode", "--python-version", "--platform");
-    private static final Set<String> MODES = Set.of("config", "direct", "graph", "order");
+            "--mode", "--python-version", "--platform", "--output", "--show");
+    private static final Set<String> MODES = Set.of("config", "direct", "graph", "order", "render");
     private static final Set<String> PLATFORMS = Set.of("win32", "linux", "darwin");
     private static final int SHORT_PYTHON_VERSION_SEGMENTS = 2;
 
     public record Source(String repository, boolean test) {}
     public record Target(String python, String platform) {}
+    public record Render(Path output, boolean show) {}
 
     public static Options parse(String... args) {
         Map<String, String> values = readPairs(args);
@@ -29,7 +30,7 @@ public record Options(
         validateRepository(repository, test);
         String mode = values.getOrDefault("--mode", "graph");
         if (!MODES.contains(mode)) throw new IllegalArgumentException("--mode: invalid mode");
-        return new Options(name, version, filter, mode, new Source(repository, test), target(values));
+        return new Options(name, version, filter, mode, new Source(repository, test), target(values), render(values));
     }
 
     private static Map<String, String> readPairs(String[] args) {
@@ -97,6 +98,14 @@ public record Options(
         return new Target(python, platform);
     }
 
+    private static Render render(Map<String, String> values) {
+        String output = values.getOrDefault("--output", "out/graph");
+        if (output.isBlank() || Files.isDirectory(Path.of(output))) {
+            throw new IllegalArgumentException("--output: expected a file prefix");
+        }
+        return new Render(Path.of(output), readBoolean(values, "--show", "true"));
+    }
+
     private static boolean readBoolean(Map<String, String> values, String key, String fallback) {
         String value = values.getOrDefault(key, fallback);
         if (!"true".equals(value) && !"false".equals(value)) {
@@ -114,5 +123,7 @@ public record Options(
         System.out.println("mode=" + mode);
         System.out.println("python-version=" + target.python());
         System.out.println("platform=" + target.platform());
+        System.out.println("output=" + render.output());
+        System.out.println("show=" + render.show());
     }
 }

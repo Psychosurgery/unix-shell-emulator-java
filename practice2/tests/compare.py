@@ -9,6 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 BUILD = ROOT / "build"
 INDEX = "https://pypi.org/simple"
+PIPDEPTREE_VERSION = "2.30.0"
 
 
 def interpreter(target):
@@ -81,11 +82,51 @@ def check_installation(python, java_versions, pip_order, edges):
             raise AssertionError((package, selected, versions[package]))
 
 
+def tree_command(python, name):
+    tools = BUILD / "reference-tools"
+    tools_python = interpreter(tools)
+    if not Path(tools_python).exists():
+        run(sys.executable, "-m", "venv", str(tools))
+    run(
+        tools_python, "-m", "pip", "--disable-pip-version-check", "install",
+        "--no-input", "--index-url", INDEX,
+        f"pipdeptree=={PIPDEPTREE_VERSION}",
+    )
+    return [
+        tools_python, "-m", "pipdeptree", "--python", python,
+        "--packages", name, "--warn", "fail",
+    ]
+
+
+def read_tree(tree):
+    edges = set()
+    versions = {}
+    pending = json.loads(tree)
+    while pending:
+        node = pending.pop()
+        parent = normalize(node["key"])
+        versions[parent] = node["installed_version"]
+        for child in node["dependencies"]:
+            edges.add((parent, normalize(child["key"])))
+            pending.append(child)
+    return edges, versions
+
+
+def check_tree(command, edges, versions):
+    reference_edges, reference_versions = read_tree(
+        run(*command, "--json-tree")
+    )
+    if reference_edges != edges:
+        raise AssertionError((reference_edges, edges))
+    if reference_versions != versions:
+        raise AssertionError(reference_versions)
+
+
 def write_example(name, suffix, text):
     (ROOT / "examples" / (name + suffix)).write_text(text, encoding="utf-8")
 
 
-def write_order(name, version, java_versions, pip_order):
+def write_comparison(name, version, java_versions, pip_order, edges):
     order_text = (
         f"{name}=={version}\n"
         f"java: {' -> '.join(java_versions)}\n"
@@ -93,6 +134,12 @@ def write_order(name, version, java_versions, pip_order):
         "versions: match\ndependencies first: yes\n"
     )
     write_example(name, "-order.txt", order_text)
+    write_example(
+        name, "-comparison.txt",
+        f"python={platform.python_version()}\nplatform={sys.platform}\n"
+        f"pipdeptree={PIPDEPTREE_VERSION}\nnodes={len(java_versions)}\n"
+        f"edges={len(edges)}\nversions=match\nedges=match\n",
+    )
     print(order_text, end="")
 
 
@@ -104,7 +151,13 @@ def compare(name, version):
     graph = run(*command, "--mode", "graph")
     edges = dependency_edges(graph)
     check_installation(python, versions, pip_order, edges)
-    write_order(name, version, versions, pip_order)
+    tree = tree_command(python, name)
+    check_tree(tree, edges, versions)
+    write_example(name, "-pipdeptree.txt", run(*tree))
+    write_example(name, "-graph.txt", graph)
+    run(*command, "--mode", "render", "--show", "false",
+        "--output", "out/" + name)
+    write_comparison(name, version, versions, pip_order, edges)
 
 
 if __name__ == "__main__":

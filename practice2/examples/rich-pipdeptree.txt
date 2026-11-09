@@ -1,0 +1,4 @@
+rich==13.9.4
+├── markdown-it-py [required: >=2.2.0, installed: 4.2.0]
+│   └── mdurl [required: ~=0.1, installed: 0.1.2]
+└── Pygments [required: >=2.13.0,<3.0.0, installed: 2.21.0]

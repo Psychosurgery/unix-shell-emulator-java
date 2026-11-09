@@ -2,6 +2,9 @@ import java.net.HttpURLConnection;
 
 public class Tests {
     private static final int CACHED_REQUESTS = 1;
+    private static final int MIN_IMAGE_WIDTH = 300;
+    private static final int MIN_IMAGE_HEIGHT = 150;
+    private static final int MIN_EMPTY_IMAGE_WIDTH = 400;
     private static int checks;
 
     public static void main(String[] args) throws Exception {
@@ -32,6 +35,7 @@ public class Tests {
         graphs();
         orders();
         invalidRepositories();
+        images();
         System.out.println("checks=" + checks);
     }
 
@@ -177,6 +181,31 @@ public class Tests {
         for (String[] extra : invalidOptions) {
             invalid("--package", "a", "--version", "1", extra[0], extra[1]);
         }
+    }
+
+    private static void images() throws Exception {
+        for (String fixture : new String[]{"chain", "diamond", "cycle", "self", "empty"}) {
+            Graph graph = graph(fixture, "");
+            java.nio.file.Path prefix = java.nio.file.Path.of("build/images/" + fixture);
+            java.nio.file.Path png = Visualization.write(graph, prefix);
+            var image = javax.imageio.ImageIO.read(png.toFile());
+            check(image != null && image.getWidth() > MIN_IMAGE_WIDTH && image.getHeight() > MIN_IMAGE_HEIGHT);
+            String d2 = java.nio.file.Files.readString(java.nio.file.Path.of(prefix + ".d2"));
+            check(d2.startsWith("direction: right\n"));
+            check(d2.contains("n0: \"A==1\""));
+            int edges = graph.edges().values().stream().mapToInt(java.util.Set::size).sum();
+            check(d2.lines().filter(line -> line.contains(" -> ")).count() == edges);
+        }
+        check(Visualization.d2(graph("chain", "A")).equals("direction: right\n"));
+        check(Visualization.image(graph("chain", "A")).getWidth() >= MIN_EMPTY_IMAGE_WIDTH);
+        check(Visualization.d2(graph("diamond", "")).contains("n2: \"D==1\""));
+        fails(() -> Visualization.write(graph("empty", ""), java.nio.file.Path.of("build/invalid.json/graph")));
+        if (java.awt.GraphicsEnvironment.isHeadless()) {
+            fails(() -> Visualization.show(java.nio.file.Path.of("build/images/chain.png")));
+        }
+        invalid("--package", "a", "--version", "1", "--show", "yes");
+        invalid("--package", "a", "--version", "1", "--output", "");
+        invalid("--package", "a", "--version", "1", "--output", "build");
     }
 
     interface Action {
