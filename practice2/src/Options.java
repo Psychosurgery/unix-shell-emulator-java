@@ -6,9 +6,11 @@ import java.util.Map;
 import java.util.Set;
 
 public record Options(
-        String name, String version, String filter, Source source) {
+        String name, String version, String filter, String mode, Source source) {
     private static final Set<String> KEYS = Set.of(
-            "--package", "--repository", "--test", "--version", "--filter");
+            "--package", "--repository", "--test", "--version", "--filter",
+            "--mode");
+    private static final Set<String> MODES = Set.of("config", "direct");
     private static final String VERSION_PATTERN =
             "(?i)v?(?:[0-9]+!)?[0-9]+(?:\\.[0-9]+)*(?:(?:a|b|rc)[0-9]+)?"
                     + "(?:\\.post[0-9]+)?(?:\\.dev[0-9]+)?(?:\\+[a-z0-9]+(?:[._-][a-z0-9]+)*)?";
@@ -24,7 +26,9 @@ public record Options(
         String filter = values.getOrDefault("--filter", "");
         validatePackage(name, version, filter, test);
         validateRepository(repository, test);
-        return new Options(name, version, filter, new Source(repository, test));
+        String mode = values.getOrDefault("--mode", "direct");
+        if (!MODES.contains(mode)) throw new IllegalArgumentException("--mode: invalid mode");
+        return new Options(name, version, filter, mode, new Source(repository, test));
     }
 
     private static Map<String, String> readPairs(String[] args) {
@@ -93,5 +97,6 @@ public record Options(
         System.out.println("test=" + source.test());
         System.out.println("version=" + version);
         System.out.println("filter=" + filter);
+        System.out.println("mode=" + mode);
     }
 }
