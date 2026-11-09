@@ -1,0 +1,25 @@
+java Main --package requests --version 2.32.3
+package=requests
+repository=https://pypi.org/pypi
+test=false
+version=2.32.3
+filter=
+exit=0
+java Main --package bad/name --version 1
+error: --package: invalid name
+exit=2
+java Main --package A --version latest
+error: --version: expected a concrete version
+exit=2
+java Main --package A --version 1 --repository ftp://example.org
+error: --repository: expected an HTTP(S) PyPI JSON API URL
+exit=2
+java Main --package A --version 1 --test yes
+error: --test: expected true or false
+exit=2
+java Main --package A --version 1 --filter bad/filter
+error: --filter: invalid substring
+exit=2
+java Main --package A --version 1 --test true --repository missing.json
+error: --repository: expected a readable file
+exit=2
